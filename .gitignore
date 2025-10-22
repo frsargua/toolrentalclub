@@ -1,0 +1,21 @@
+# General
+.DS_Store
+*.log
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Firebase
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
