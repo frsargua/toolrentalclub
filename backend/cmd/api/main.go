@@ -5,14 +5,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/gorilla/mux"
-
 	authApp "github.com/yourusername/toolrentalclub/application/auth"
 	userApp "github.com/yourusername/toolrentalclub/application/user"
 	"github.com/yourusername/toolrentalclub/infrastructure/firebase"
 	"github.com/yourusername/toolrentalclub/infrastructure/repository/memory"
 	"github.com/yourusername/toolrentalclub/interfaces/http/handlers"
-	"github.com/yourusername/toolrentalclub/interfaces/http/middleware"
+	"github.com/yourusername/toolrentalclub/interfaces/http/routes"
 	"github.com/yourusername/toolrentalclub/pkg/config"
 	"github.com/yourusername/toolrentalclub/pkg/server"
 )
@@ -48,26 +46,15 @@ func main() {
 	authHandler := handlers.NewAuthHandler(authUseCase)
 	userHandler := handlers.NewUserHandler(userUseCase)
 
-	// Setup router
-	r := mux.NewRouter()
-
-	// Apply global middleware
-	r.Use(middleware.CORSMiddleware)
-	r.Use(middleware.LoggingMiddleware)
-
-	// Public routes
-	r.HandleFunc("/api/health", healthHandler.HealthCheck).Methods("GET")
-
-	// Auth routes
-	authRouter := r.PathPrefix("/api/auth").Subrouter()
-	authRouter.HandleFunc("/verify", authHandler.VerifyToken).Methods("POST")
-
-	// Protected routes (require authentication)
-	protectedRouter := r.PathPrefix("/api").Subrouter()
-	if authService != nil {
-		protectedRouter.Use(middleware.AuthMiddleware(authUseCase))
-	}
-	protectedRouter.HandleFunc("/profile", userHandler.GetProfile).Methods("GET")
+	// Setup router with all routes
+	router := routes.NewRouter(
+		healthHandler,
+		authHandler,
+		userHandler,
+		authUseCase,
+		authService != nil,
+	)
+	r := router.Setup()
 
 	// Start server
 	serverCfg := server.Config{
