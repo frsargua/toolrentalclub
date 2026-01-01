@@ -9,7 +9,7 @@ import {
 import { Container, Navbar, Nav, Button, Spinner } from "react-bootstrap";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./config/firebase";
-import { logout } from "./services/api";
+import { logout, verifyTokenWithBackend } from "./services/api";
 import Login from "./components/Login.tsx";
 import Home from "./components/Home.tsx";
 import Profile from "./components/Profile.tsx";
@@ -19,9 +19,21 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user);
+    // Listen for auth state changes and validate token with backend
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // User exists in cache, validate token with backend
+        const isValid = await verifyTokenWithBackend();
+        if (!isValid) {
+          // Token is invalid/expired, log out
+          await logout();
+          setIsAuthenticated(false);
+        } else {
+          setIsAuthenticated(true);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
       setLoading(false);
     });
 

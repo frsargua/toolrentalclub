@@ -102,6 +102,29 @@ export const sendTokenToBackend = async (idToken: string): Promise<void> => {
   }
 };
 
+export const verifyTokenWithBackend = async (): Promise<boolean> => {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      return false;
+    }
+
+    const idToken = await user.getIdToken(true); // force refresh token
+    const response = await fetch(`${API_BASE_URL}/auth/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token: idToken }),
+    });
+
+    return response.ok;
+  } catch (error: any) {
+    console.error("Token verification failed:", error);
+    return false;
+  }
+};
+
 // Generic API call helper
 export const apiCall = async (
   endpoint: string,
